@@ -1,10 +1,20 @@
 # 8051 assembly code modules for I2C, Timers and Serial functions
 
-These assembly code modules for the [8051 series](https://www.nxp.com/docs/en/data-sheet/8XC51_8XC52.pdf) of 8-bit microcontrollers are drawn from several of my commercial products.  They demonstrate the way that "bare-metal" assembly code (for speed) can be integrated successfully with 'C' code middleware and application code in a readable fashion.  I have redacted any commercially-sensitive parts and associated them with a "vanilla" demonstration application so that I offer them to others freely for learning, prototyping or implementation.
+These assembly code modules for the [8051 series](https://www.nxp.com/docs/en/data-sheet/8XC51_8XC52.pdf) of 8-bit microcontrollers are drawn from several of my commercial products.  They demonstrate the way that "bare-metal" assembly code (for speed) can be integrated successfully with 'C' code middleware and application code in a readable fashion.  I have redacted any commercially-sensitive sections and associated the modules with a "vanilla" demonstration application so that I offer them as a package to others for learning, prototyping or implementation.
 
 # Quick links
 
-*to be added*
+* [History](https://github.com/Chapmip/8051-assembly-c-i2c-timers-serial/blob/master/README.md#history)
+* [Hierarchy of code modules](https://github.com/Chapmip/8051-assembly-c-i2c-timers-serial/blob/master/README.md#hierarchy-of-code-modules)
+* [Descriptions of code modules](https://github.com/Chapmip/8051-assembly-c-i2c-timers-serial/blob/master/README.md#descriptions-of-code-modules)
+* [`Demo.c` module](https://github.com/Chapmip/8051-assembly-c-i2c-timers-serial/blob/master/README.md#democ-module)
+* [`Timers.a51` module](https://github.com/Chapmip/8051-assembly-c-i2c-timers-serial/blob/master/README.md#timersa51-module-and-header-file)
+* [`I2c_51.a51` module](https://github.com/Chapmip/8051-assembly-c-i2c-timers-serial/blob/master/README.md#i2c_51a51-module-and-header-file)
+* [`Led_bits.a51` module](https://github.com/Chapmip/8051-assembly-c-i2c-timers-serial/blob/master/README.md#led_bitsa51-module-and-header-file)
+* [`Leds.c` module](https://github.com/Chapmip/8051-assembly-c-i2c-timers-serial/blob/master/README.md#ledsc-module-and-header-file)
+* [`Serial.a51` module](https://github.com/Chapmip/8051-assembly-c-i2c-timers-serial/blob/master/README.md#seriala51-module-and-header-file)
+* [Other header files](https://github.com/Chapmip/8051-assembly-c-i2c-timers-serial/blob/master/README.md#other-header-files)
+* [References](https://github.com/Chapmip/8051-assembly-c-i2c-timers-serial/blob/master/README.md#references)
 
 # History
 
@@ -294,7 +304,7 @@ None
 
 **Purpose:**
 
-Forces an update of the LEDs from the externally visible values `leds_on` and `leds_flash`, which are normally manipulated implictly by the `set_leds...()` functions
+Forces an update of the LEDs from the externally visible values `leds_on` and `leds_flash`, which are normally manipulated implictly by the `set_leds_...()` functions
 
 **Arguments:**
 
@@ -314,8 +324,8 @@ Holds an 8-bit bitmap containing half of the state of each associated LED
 
 For each bit in the bitmap:
 
-1 if LED is on or flashing
-0 if LED is off or blinking
+* 1 if LED is on or flashing
+* 0 if LED is off or blinking
 
 **Transitions:**
 
@@ -331,8 +341,8 @@ Holds an 8-bit bitmap containing half of the state of each associated LED
 
 For each bit in the bitmap:
 
-1 if LED is flashing or blinking
-0 if LED is on or off
+* 1 if LED is flashing or blinking
+* 0 if LED is on or off
 
 **Transitions:**
 
@@ -471,4 +481,4 @@ The following stand-alone header files provide definitions for the system as a w
 * [AT89S53 — 8-bit 8051-derivative Microcontroller with 12K Bytes Flash](http://ww1.microchip.com/downloads/en/devicedoc/doc0787.pdf)
 * [AT89S8253 — 8-bit 8051-derivative Microcontroller with 12K Bytes Flash](http://ww1.microchip.com/downloads/en/devicedoc/doc3286.pdf)
 * [PCA9551 — 8-bit I2C-bus LED driver with programmable blink rates](https://www.nxp.com/docs/en/data-sheet/PCA9551.pdf)
-*... more to be added*
+
