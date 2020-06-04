@@ -38,7 +38,7 @@ The `Demo.c` module serves only as a demonstration application that integrates t
 
 ### External hardware requirements
 
-The minimum requirement to demonstrate the running of this demonstration application is an LED connected via a series resistor to the Vdd (+5V) supply from the P1.7 pin.  This diagnostic output will also confirm that the `Timer.a51` module is operating as expected.
+The minimum requirement to demonstrate the running of this demonstration application is an LED connected via a series resistor (say 470 ohm) to the Vdd (+5V) supply from the P1.7 pin.  This diagnostic LED will also confirm that the `Timer.a51` module is operating as expected.
 
 To show the functionality of the `I2c_51.a51`, `Leds.c` and `Led_bits.a51` modules, it is necessary to connect a [PCA9551 8-bit I2C-bus LED driver](https://www.nxp.com/docs/en/data-sheet/PCA9551.pdf) to the nominated I2C bus lines P0.0 (SCL) and P0.1 (SDA).  These two pins must also be fitted with pull-up resistors to the Vdd (+5V) supply, as they operate only in "open-drain" mode.  These resistors should be in the range 2k2 to 6k8 ohms: the exact values are not critical provided that short leads (< 20cm) are used to connect the PCA9551.  The only PCA 9551 outputs exercised by `Demo.c` are LED7, LED6, LED5 and LED4, so only these outputs need to be connected to LEDs through suitable series resistors (say 470 ohms) up to the Vdd (+5V) supply.
 
@@ -152,7 +152,7 @@ See `set_I2C_watchdog()` above.
 
 **Purpose:**
 
-Switches on (steadily) LED L1 (on P1.7 by default)
+Switches on (steadily) directly-connected LED (on P1.7 by default)
 
 **Arguments:**
 
@@ -166,7 +166,7 @@ None
 
 **Purpose:**
 
-Switches off (steadily) LED L1 (on P1.7 by default)
+Switches off (steadily) directly-connected LED (on P1.7 by default)
 
 **Arguments:**
 
@@ -180,7 +180,7 @@ None
 
 **Purpose:**
 
-Configures LED L1 (on P1.7 by default) to flash automatically with a specified half-period
+Configures directly-connected LED (on P1.7 by default) to flash automatically with a specified half-period
 
 **Arguments:**
 
@@ -400,8 +400,8 @@ Attempts to send a serial character through the UART **without blocking** (i.e. 
 
 **Returns:**
 
-1 (true bit) if character is successfully dispatched to the UART
-0 (false bit) if either the UART transmitter is still busy or the /CTS handshake input line is high (false)
+* 1 (true bit) if character is successfully dispatched to the UART
+* 0 (false bit) if either the UART transmitter is still busy or the /CTS handshake input line is high (false)
 
 ### `serial_tx_ready` status bit
 
@@ -411,8 +411,8 @@ Indicates whether the UART transmitter is ready to accept a character to send (i
 
 **Values:**
 
-1 (true bit) if UART transmitter is ready to accept a character to send
-0 (false bit) if UART transmitter is still busy on a previous transmission
+* 1 (true bit) if UART transmitter is ready to accept a character to send
+* 0 (false bit) if UART transmitter is still busy on a previous transmission
 
 **Transitions:**
 
@@ -431,8 +431,8 @@ None
 
 **Returns:**
 
-8-bit zero (ASCII NUL) if the receive buffer is empty (i.e. no character available to extract)
-8-bit `ch` is the extracted character if the receive buffer was not previously empty
+* 8-bit zero (ASCII `NUL`) if the receive buffer is empty (i.e. no character available to extract)
+* 8-bit `ch` is the extracted character if the receive buffer was not previously empty
 
 ### `serial_rx_ready` status bit
 
@@ -442,8 +442,8 @@ Indicates whether the receive buffer contains any characters, so that a call to 
 
 **Values:**
 
-1 (true bit) if receive buffer contains at least one character
-0 (false bit) if receive buffer is empty
+* 1 (true bit) if receive buffer contains at least one character
+* 0 (false bit) if receive buffer is empty
 
 **Transitions:**
 
@@ -458,8 +458,8 @@ Indicates whether the receive buffer has overflowed, so that the most recently r
 
 **Values:**
 
-1 (true bit) if receive buffer has overflowed
-0 (false bit) if receive buffer is empty
+* 1 (true bit) if receive buffer has overflowed
+* 0 (false bit) if receive buffer is empty
 
 **Transitions:**
 
