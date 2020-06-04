@@ -1,6 +1,6 @@
 # 8051 assembly code modules for I2C, Timers and Serial functions
 
-These assembly code modules for the [8051 series](https://www.nxp.com/docs/en/data-sheet/8XC51_8XC52.pdf) of 8-bit microcontrollers are drawn from several of my commercial products.  They demonstrate the way that "bare-metal" assembly code (for speed) can be integrated successfully with 'C' code middleware and application code in a readable fashion.  I have redacted any commercially-sensitive sections and associated the modules with a "vanilla" demonstration application so that I offer them as a package to others for learning, prototyping or implementation.
+These assembly code modules for the [8051 series](https://www.nxp.com/docs/en/data-sheet/8XC51_8XC52.pdf) of 8-bit microcontrollers are drawn from several of my commercial designs.  They demonstrate the way that "bare-metal" assembly code (for speed) can be integrated successfully with 'C' code middleware and application code in a readable fashion.  I have removed any commercially-sensitive elements and included a "vanilla" demonstration application that utilises all of the modules so that the combined package can be adopted by others for learning, prototyping or implementation.
 
 # Quick links
 
@@ -38,9 +38,9 @@ The `Demo.c` module serves only as a demonstration application that integrates t
 
 ### External hardware requirements
 
-The minimum requirement to demonstrate the running of this demonstration application is an LED connected via a series resistor (say 470 ohm) to the Vdd (+5V) supply from the P1.7 pin.  This diagnostic LED will also confirm that the `Timer.a51` module is operating as expected.
+The minimum requirement to demonstrate the running of this demonstration application is an LED connected via a series resistor (say 560 ohms) to the Vdd (+5V) supply from the P1.7 pin.  This diagnostic LED will also confirm that the `Timer.a51` module is operating as expected.
 
-To show the functionality of the `I2c_51.a51`, `Leds.c` and `Led_bits.a51` modules, it is necessary to connect a [PCA9551 8-bit I2C-bus LED driver](https://www.nxp.com/docs/en/data-sheet/PCA9551.pdf) to the nominated I2C bus lines P0.0 (SCL) and P0.1 (SDA).  These two pins must also be fitted with pull-up resistors to the Vdd (+5V) supply, as they operate only in "open-drain" mode.  These resistors should be in the range 2k2 to 6k8 ohms: the exact values are not critical provided that short leads (< 20cm) are used to connect the PCA9551.  The only PCA 9551 outputs exercised by `Demo.c` are LED7, LED6, LED5 and LED4, so only these outputs need to be connected to LEDs through suitable series resistors (say 470 ohms) up to the Vdd (+5V) supply.
+To show the functionality of the `I2c_51.a51`, `Leds.c` and `Led_bits.a51` modules, it is necessary to connect a [PCA9551 8-bit I2C-bus LED driver](https://www.nxp.com/docs/en/data-sheet/PCA9551.pdf) to the nominated I2C bus lines P0.0 (SCL) and P0.1 (SDA).  These two pins must also be fitted with pull-up resistors to the Vdd (+5V) supply, as they operate only in "open-drain" mode.  These resistors should be in the range 2k2 to 6k8 ohms: the exact values are not critical provided that short leads (< 20cm) are used to connect the PCA9551.  The only PCA 9551 outputs exercised by `Demo.c` are LED7, LED6, LED5 and LED4, so only these outputs need to be connected to LEDs through suitable series resistors (say 560 ohms) up to the Vdd (+5V) supply.
 
 To show the functionality of the `Serial.a51` module, it is necessary to connect a serial device **at logic levels** (0V to Vdd) to P3.0 (TXD output from microcontroller) and P3.1 (RXD serial input to microcontroller).  It is also necessary to connect P2.7 (/CTS input to microcontroller) to ground, in order to indicate that the connected serial device is ready to receive serial data from the microcontroller.
 
@@ -84,7 +84,7 @@ The `Timer.a51` module is only suitable for an 8052-variant microcontroller (e.g
 
 **Purpose:**
 
-Initialises the `Timers.a51` module, including setting up regular Timer 2 interrupts ("ticks") at the specified periodic interval
+Initialises the `Timers.a51` module, including setting up regular Timer 2 interrupts ("ticks") at the specified periodic interval.
 
 **Arguments:**
 
@@ -98,7 +98,7 @@ None
 
 **Purpose:**
 
-Configures the `main_timeout` flag (see [`Timers.h`](/Timers.h)) to be set automatically after the specified number of Timer 2 ticks have elapsed (clears `main_timeout` initially)
+Configures the `main_timeout` flag (see below) to be set automatically after the specified number of Timer 2 ticks have elapsed (clears `main_timeout` initially).
 
 **Arguments:**
 
@@ -108,15 +108,27 @@ Unsigned 16-bit `ticks` specifying the number of Timer 2 "ticks" (see `TICK_RATE
 
 None
 
-### `main_timeout()` status bit
+### `main_timeout` status bit
 
-See `set_main_timeout()` above.
+**Purpose:**
+
+Indicates whether a main timeout period set up using `set_main_timeout()` has expired.
+
+**Values:**
+
+* 1 (true bit) if main timeout period has expired
+* 0 (false bit) if main timeout timer is still running
+
+**Transitions:**
+
+* Set by Timer 2 interrupt routine when the main timeout period expires — and also set initially by `init_timers()` 
+* Cleared at first when `set_main_timeout()` is called
 
 ### `set_aux_timeout()` function
 
 **Purpose:**
 
-Configures the `aux_timeout` flag (see [`Timers.h`](/Timers.h)) to be set automatically after the specified number of Timer 2 ticks have elapsed (clears `aux_timeout` initially)
+Configures the `aux_timeout` flag (see below) to be set automatically after the specified number of Timer 2 ticks have elapsed (clears `aux_timeout` initially).
 
 **Arguments:**
 
@@ -126,15 +138,27 @@ Unsigned 16-bit `ticks` specifying the number of Timer 2 "ticks" (see `TICK_RATE
 
 None
 
-### `aux_timeout()` status bit
+### `aux_timeout` status bit
 
-See `set_aux_timeout()` above.
+**Purpose:**
+
+Indicates whether an auxiliary timeout period set up using `set_aux_timeout()` has expired.
+
+**Values:**
+
+* 1 (true bit) if auxiliary timeout period has expired
+* 0 (false bit) if auxiliary timeout timer is still running
+
+**Transitions:**
+
+* Set by Timer 2 interrupt routine when the auxiliary timeout period expires — and also set initially by `init_timers()` 
+* Cleared at first when `set_aux_timeout()` is called
 
 ### `set_I2C_watchdog()` function
 
 **Purpose:**
 
-Configures the `i2c_tout` flag (see [`Timers.h`](/Timers.h)) to be set automatically once 256 Timer 2 "ticks" (see `TICK_RATE` frequency in [`Timing.h`](/Timing.h)) have elapsed (clears `i2c_tout` initially)
+Configures an I2C bus watchdog timer so that the `i2c_tout` flag (see below) is set automatically once 256 Timer 2 "ticks" (see `TICK_RATE` frequency in [`Timing.h`](/Timing.h)) have elapsed (clears `i2c_tout` initially).
 
 **Arguments:**
 
@@ -144,9 +168,21 @@ None
 
 None
 
-### `i2c_tout()` status bit
+### `i2c_tout` status bit
 
-See `set_I2C_watchdog()` above.
+**Purpose:**
+
+Indicates whether the I2C bus watchdog timer period set up using `set_I2C_watchdog()` has expired.
+
+**Values:**
+
+* 1 (true bit) if I2C bus watchdog timeout period has expired
+* 0 (false bit) if I2C bus watchdog timeout timer is still running
+
+**Transitions:**
+
+* Set by Timer 2 interrupt routine when the I2C bus watchdog timeout period expires — and also set initially by `init_timers()` 
+* Cleared at first when `set_I2C_watchdog()` is called
 
 ### `set_L1_on()` function
 
@@ -166,7 +202,7 @@ None
 
 **Purpose:**
 
-Switches off (steadily) directly-connected LED (on P1.7 by default)
+Switches off (steadily) directly-connected LED (on P1.7 by default).
 
 **Arguments:**
 
@@ -180,7 +216,7 @@ None
 
 **Purpose:**
 
-Configures directly-connected LED (on P1.7 by default) to flash automatically with a specified half-period
+Configures directly-connected LED (on P1.7 by default) to flash automatically with a specified half-period.
 
 **Arguments:**
 
@@ -200,13 +236,13 @@ The `I2c_51.a51` module should run on any 8051-variant microcontroller.
 
 By default (see [`Ports.inc`](/Ports.inc)), the I2C bus lines are assigned to P0.0 (SCL) and P0.1 (SDA).
 
-*Note: In this module, the 7-bit bus addresses for I2C slaves must be presented in left-justified 8-bit format (i.e. shifted to the left by one bit, which is the same as multiplying it by two).  It is therefore important to inspect carefully the data sheet for an I2C slave, as some present the slave address in unshifted 7-bit format whereas others show it in a left-justified position.  In any case, the least significant bit of an 8-bit slave address presented as an argument to the `I2c_51.a51` functions is always discarded.*
+*Important note: In this module, the 7-bit bus addresses for I2C slaves must be presented in left-justified 8-bit format (i.e. shifted to the left by one bit, which is the same as multiplying it by two).  It is therefore important to inspect carefully the data sheet for an I2C slave, as some present the slave address in unshifted 7-bit format whereas others show it in a left-justified position.  In any case, the least significant bit of an 8-bit slave address presented as an argument to the `I2c_51.a51` functions is always discarded.*
 
 ### `init_i2c()` function
 
 **Purpose:**
 
-Attempts to initialise the I2C bus by releasing the SCL and SDA lines from the microcontroller side, then sending a series of 9 clock pulses to release the SDA line in the event that a slave device has jammed up partway through a transaction.  
+Attempts to initialise the I2C bus by releasing the SCL and SDA lines from the microcontroller side, then sending a series of 9 clock pulses to release the SDA line in the event that a slave device has jammed up partway through a transaction.
 
 **Arguments:**
 
@@ -225,7 +261,7 @@ Must be called prior to invoking any of the `..._i2c_lng()` functions in order t
 
 **Arguments:**
 
-Unsigned 8-bit `address` containing 7-bit slave address as its upper 7 bits (the least significant bit is ignored).  See important note under [`I2c_51.a51` module](https://github.com/Chapmip/8051-assembly-c-i2c-timers-serial/blob/master/README.md#i2c_51a51-module-and-header-file) above — depending on the way that the slave address is specified, it may be necessary to shift it one bit to the left (i.e. multiply it by two) before providing it as an 8-bit argument.
+Unsigned 8-bit `address` containing 7-bit slave address as its upper 7 bits (the least significant bit is ignored).  See important note [above](https://github.com/Chapmip/8051-assembly-c-i2c-timers-serial/blob/master/README.md#i2c_51a51-module-and-header-file) — depending on the way that the slave address is specified, it may be necessary to shift it one bit to the left (i.e. multiply it by two) before providing it as an 8-bit argument.
 
 **Returns:**
 
@@ -254,7 +290,7 @@ Polls for the presence or absence of an I2C bus slave at the specified I2C bus a
 
 **Arguments:**
 
-Unsigned 8-bit `address` containing 7-bit slave address as its upper 7 bits (the least significant bit is ignored).  See important note under [`I2c_51.a51` module](https://github.com/Chapmip/8051-assembly-c-i2c-timers-serial/blob/master/README.md#i2c_51a51-module-and-header-file) above — depending on the way that the slave address is specified, it may be necessary to shift it one bit to the left (i.e. multiply it by two) before providing it as an 8-bit argument.
+Unsigned 8-bit `address` containing 7-bit slave address as its upper 7 bits (the least significant bit is ignored).  See important note [above](https://github.com/Chapmip/8051-assembly-c-i2c-timers-serial/blob/master/README.md#i2c_51a51-module-and-header-file) — depending on the way that the slave address is specified, it may be necessary to shift it one bit to the left (i.e. multiply it by two) before providing it as an 8-bit argument.
 
 **Returns:**
 
@@ -271,7 +307,7 @@ Polls for the presence or absence of an I2C bus slave at the specified I2C bus a
 
 Unsigned 16-bit `address` consisting of two 8-bit fields:
 
-* Most significant byte contains the 7-bit slave address as its upper 7 bits (the least significant bit is ignored).  See important note under [`I2c_51.a51` module](https://github.com/Chapmip/8051-assembly-c-i2c-timers-serial/blob/master/README.md#i2c_51a51-module-and-header-file) above — depending on the way that the slave address is specified, it may be necessary to shift it one bit to the left (i.e. multiply it by two) before providing it as an 8-bit argument.
+* Most significant byte contains the 7-bit slave address as its upper 7 bits (the least significant bit is ignored).  See important note [above](https://github.com/Chapmip/8051-assembly-c-i2c-timers-serial/blob/master/README.md#i2c_51a51-module-and-header-file) — depending on the way that the slave address is specified, it may be necessary to shift it one bit to the left (i.e. multiply it by two) before providing it as an 8-bit argument.
 * Least significant byte contains the 8-bit sub-address to be accessed within the I2C slave device.
 
 **Returns:**
@@ -283,15 +319,15 @@ Unsigned 16-bit `address` consisting of two 8-bit fields:
 
 **Purpose:**
 
-Attempts to write data to an I2C bus slave at the specified I2C bus address without any sub-addressing within the device.
+Attempts to write data from an array in internal RAM to an I2C bus slave at the specified I2C bus address without any sub-addressing within the device.
 
 **Arguments:**
 
-Unsigned 8-bit `address` containing 7-bit slave address as its upper 7 bits (the least significant bit is ignored).  See important note under [`I2c_51.a51` module](https://github.com/Chapmip/8051-assembly-c-i2c-timers-serial/blob/master/README.md#i2c_51a51-module-and-header-file) above — depending on the way that the slave address is specified, it may be necessary to shift it one bit to the left (i.e. multiply it by two) before providing it as an 8-bit argument.
+Unsigned 8-bit `address` containing 7-bit slave address as its upper 7 bits (the least significant bit is ignored).  See important note [above](https://github.com/Chapmip/8051-assembly-c-i2c-timers-serial/blob/master/README.md#i2c_51a51-module-and-header-file) — depending on the way that the slave address is specified, it may be necessary to shift it one bit to the left (i.e. multiply it by two) before providing it as an 8-bit argument.
 
 Pointer `ptr` to an array of unsigned 8-bit data values in internal RAM
 
-Unsigned 8-bit `count` of the number of values to write (should be less than or equal to the length of the array pointed to by `ptr`)
+Unsigned 8-bit `count` of the number of values to write (should be <= `sizeof` array pointed to by `ptr`)
 
 **Returns:**
 
@@ -302,18 +338,18 @@ Unsigned 8-bit `count` of the number of values to write (should be less than or 
 
 **Purpose:**
 
-Attempts to write data to an I2C bus slave at the specified I2C bus address and starting sub-address within the device.
+Attempts to write data from an array in internal RAM to an I2C bus slave at the specified I2C bus address and starting sub-address within the device.
 
 **Arguments:**
 
 Unsigned 16-bit `address` consisting of two 8-bit fields:
 
-* Most significant byte contains the 7-bit slave address as its upper 7 bits (the least significant bit is ignored).  See important note under [`I2c_51.a51` module](https://github.com/Chapmip/8051-assembly-c-i2c-timers-serial/blob/master/README.md#i2c_51a51-module-and-header-file) above — depending on the way that the slave address is specified, it may be necessary to shift it one bit to the left (i.e. multiply it by two) before providing it as an 8-bit argument.
+* Most significant byte contains the 7-bit slave address as its upper 7 bits (the least significant bit is ignored).  See important note [above](https://github.com/Chapmip/8051-assembly-c-i2c-timers-serial/blob/master/README.md#i2c_51a51-module-and-header-file) — depending on the way that the slave address is specified, it may be necessary to shift it one bit to the left (i.e. multiply it by two) before providing it as an 8-bit argument.
 * Least significant byte contains the 8-bit starting sub-address to be accessed within the I2C slave device.
 
 Pointer `ptr` to an array of unsigned 8-bit data values in internal RAM
 
-Unsigned 8-bit `count` of the number of values to write (should be less than or equal to the length of the array pointed to by `ptr`)
+Unsigned 8-bit `count` of the number of values to write (should be <= `sizeof` array pointed to by `ptr`)
 
 **Returns:**
 
@@ -324,7 +360,7 @@ Unsigned 8-bit `count` of the number of values to write (should be less than or 
 
 **Purpose:**
 
-Attempts to write data to an I2C bus slave at the specified I2C bus address and long starting sub-address (16 bits) within the device.
+Attempts to write data  from an array in internal RAM to an I2C bus slave at the specified I2C bus address and long starting sub-address (16 bits) within the device.
 
 *It is essential that `set_i2c_lng()` is called with the required I2C bus address with the slave before invoking this function*
 
@@ -334,7 +370,7 @@ Unsigned 16-bit `subaddr` is the starting sub-address (long 16 bit form) to be a
 
 Pointer `ptr` to an array of unsigned 8-bit data values in internal RAM
 
-Unsigned 8-bit `count` of the number of values to write (should be less than or equal to the length of the array pointed to by `ptr`)
+Unsigned 8-bit `count` of the number of values to write (should be <= `sizeof` array pointed to by `ptr`)
 
 **Returns:**
 
@@ -345,15 +381,15 @@ Unsigned 8-bit `count` of the number of values to write (should be less than or 
 
 **Purpose:**
 
-Attempts to read data from an I2C bus slave at the specified I2C bus address without any sub-addressing within the device.
+Attempts to read data to an array in internal RAM from an I2C bus slave at the specified I2C bus address without any sub-addressing within the device.
 
 **Arguments:**
 
-Unsigned 8-bit `address` containing 7-bit slave address as its upper 7 bits (the least significant bit is ignored).  See important note under [`I2c_51.a51` module](https://github.com/Chapmip/8051-assembly-c-i2c-timers-serial/blob/master/README.md#i2c_51a51-module-and-header-file) above — depending on the way that the slave address is specified, it may be necessary to shift it one bit to the left (i.e. multiply it by two) before providing it as an 8-bit argument.
+Unsigned 8-bit `address` containing 7-bit slave address as its upper 7 bits (the least significant bit is ignored).  See important note [above](https://github.com/Chapmip/8051-assembly-c-i2c-timers-serial/blob/master/README.md#i2c_51a51-module-and-header-file) — depending on the way that the slave address is specified, it may be necessary to shift it one bit to the left (i.e. multiply it by two) before providing it as an 8-bit argument.
 
 Pointer `ptr` to an array of unsigned 8-bit data values in internal RAM
 
-Unsigned 8-bit `count` of the number of values to read (should be less than or equal to the length of the array pointed to by `ptr`)
+Unsigned 8-bit `count` of the number of values to read (should be <= `sizeof` array pointed to by `ptr`)
 
 **Returns:**
 
@@ -364,18 +400,18 @@ Unsigned 8-bit `count` of the number of values to read (should be less than or e
 
 **Purpose:**
 
-Attempts to read data from an I2C bus slave at the specified I2C bus address and starting sub-address within the device.
+Attempts to read data to an array in internal RAM from an I2C bus slave at the specified I2C bus address and starting sub-address within the device.
 
 **Arguments:**
 
 Unsigned 16-bit `address` consisting of two 8-bit fields:
 
-* Most significant byte contains the 7-bit slave address as its upper 7 bits (the least significant bit is ignored).  See important note under [`I2c_51.a51` module](https://github.com/Chapmip/8051-assembly-c-i2c-timers-serial/blob/master/README.md#i2c_51a51-module-and-header-file) above — depending on the way that the slave address is specified, it may be necessary to shift it one bit to the left (i.e. multiply it by two) before providing it as an 8-bit argument.
+* Most significant byte contains the 7-bit slave address as its upper 7 bits (the least significant bit is ignored).  See important note [above](https://github.com/Chapmip/8051-assembly-c-i2c-timers-serial/blob/master/README.md#i2c_51a51-module-and-header-file) — depending on the way that the slave address is specified, it may be necessary to shift it one bit to the left (i.e. multiply it by two) before providing it as an 8-bit argument.
 * Least significant byte contains the 8-bit starting sub-address to be accessed within the I2C slave device.
 
 Pointer `ptr` to an array of unsigned 8-bit data values in internal RAM
 
-Unsigned 8-bit `count` of the number of values to read (should be less than or equal to the length of the array pointed to by `ptr`)
+Unsigned 8-bit `count` of the number of values to read (should be <= `sizeof` array pointed to by `ptr`)
 
 **Returns:**
 
@@ -386,7 +422,7 @@ Unsigned 8-bit `count` of the number of values to read (should be less than or e
 
 **Purpose:**
 
-Attempts to read data from an I2C bus slave at the specified I2C bus address and long starting sub-address (16 bits) within the device.
+Attempts to read data to an array in internal RAM from an I2C bus slave at the specified I2C bus address and long starting sub-address (16 bits) within the device.
 
 *It is essential that `set_i2c_lng()` is called with the required I2C bus address with the slave before invoking this function*
 
@@ -396,7 +432,7 @@ Unsigned 16-bit `subaddr` is the starting sub-address (long 16 bit form) to be a
 
 Pointer `ptr` to an array of unsigned 8-bit data values in internal RAM
 
-Unsigned 8-bit `count` of the number of values to read (should be less than or equal to the length of the array pointed to by `ptr`)
+Unsigned 8-bit `count` of the number of values to read (should be <= `sizeof` array pointed to by `ptr`)
 
 **Returns:**
 
@@ -407,15 +443,15 @@ Unsigned 8-bit `count` of the number of values to read (should be less than or e
 
 **Purpose:**
 
-Attempts to compare data from an I2C bus slave (at the specified I2C bus address without any sub-addressing within the device) with an array of data held in internal RAM.
+Attempts to compare data in an array in internal RAM with that read from an I2C bus slave at the specified I2C bus address without any sub-addressing within the device.
 
 **Arguments:**
 
-Unsigned 8-bit `address` containing 7-bit slave address as its upper 7 bits (the least significant bit is ignored).  See important note under [`I2c_51.a51` module](https://github.com/Chapmip/8051-assembly-c-i2c-timers-serial/blob/master/README.md#i2c_51a51-module-and-header-file) above — depending on the way that the slave address is specified, it may be necessary to shift it one bit to the left (i.e. multiply it by two) before providing it as an 8-bit argument.
+Unsigned 8-bit `address` containing 7-bit slave address as its upper 7 bits (the least significant bit is ignored).  See important note [above](https://github.com/Chapmip/8051-assembly-c-i2c-timers-serial/blob/master/README.md#i2c_51a51-module-and-header-file) — depending on the way that the slave address is specified, it may be necessary to shift it one bit to the left (i.e. multiply it by two) before providing it as an 8-bit argument.
 
 Pointer `ptr` to an array of unsigned 8-bit data values in internal RAM
 
-Unsigned 8-bit `count` of the number of values to compare (should be less than or equal to the length of the array pointed to by `ptr`)
+Unsigned 8-bit `count` of the number of values to compare (should be <= `sizeof` array pointed to by `ptr`)
 
 **Returns:**
 
@@ -426,18 +462,18 @@ Unsigned 8-bit `count` of the number of values to compare (should be less than o
 
 **Purpose:**
 
-Attempts to compare data from an I2C bus slave (at the specified I2C bus address and starting sub-address within the device) with an array of data held in internal RAM.
+Attempts to compare data in an array in internal RAM with that read from an I2C bus slave at the specified I2C bus address and starting sub-address within the device.  This routine may be useful to confirm that a previous write to a series of sub-addresses (for example, in a memory device) has been successful.
 
 **Arguments:**
 
 Unsigned 16-bit `address` consisting of two 8-bit fields:
 
-* Most significant byte contains the 7-bit slave address as its upper 7 bits (the least significant bit is ignored).  See important note under [`I2c_51.a51` module](https://github.com/Chapmip/8051-assembly-c-i2c-timers-serial/blob/master/README.md#i2c_51a51-module-and-header-file) above — depending on the way that the slave address is specified, it may be necessary to shift it one bit to the left (i.e. multiply it by two) before providing it as an 8-bit argument.
+* Most significant byte contains the 7-bit slave address as its upper 7 bits (the least significant bit is ignored).  See important note [above](https://github.com/Chapmip/8051-assembly-c-i2c-timers-serial/blob/master/README.md#i2c_51a51-module-and-header-file) — depending on the way that the slave address is specified, it may be necessary to shift it one bit to the left (i.e. multiply it by two) before providing it as an 8-bit argument.
 * Least significant byte contains the 8-bit starting sub-address to be accessed within the I2C slave device.
 
 Pointer `ptr` to an array of unsigned 8-bit data values in internal RAM
 
-Unsigned 8-bit `count` of the number of values to compare (should be less than or equal to the length of the array pointed to by `ptr`)
+Unsigned 8-bit `count` of the number of values to compare (should be <= `sizeof` array pointed to by `ptr`)
 
 **Returns:**
 
@@ -448,7 +484,7 @@ Unsigned 8-bit `count` of the number of values to compare (should be less than o
 
 **Purpose:**
 
-Attempts to compare data from an I2C bus slave (at the specified I2C bus address and long starting sub-address (16 bits) within the device) with an array of data held in internal RAM.
+Attempts to compare data in an array in internal RAM with that read from an I2C bus slave at the specified I2C bus address and long starting sub-address (16 bits) within the device.  This routine may be useful to confirm that a previous write to a series of sub-addresses (for example, in a memory device) has been successful.
 
 *It is essential that `set_i2c_lng()` is called with the required I2C bus address with the slave before invoking this function*
 
@@ -458,7 +494,7 @@ Unsigned 16-bit `subaddr` is the starting sub-address (long 16 bit form) to be a
 
 Pointer `ptr` to an array of unsigned 8-bit data values in internal RAM
 
-Unsigned 8-bit `count` of the number of values to compare (should be less than or equal to the length of the array pointed to by `ptr`)
+Unsigned 8-bit `count` of the number of values to compare (should be <= `sizeof` array pointed to by `ptr`)
 
 **Returns:**
 
@@ -473,7 +509,7 @@ The `Led_bits.a51` is a helper module providing efficient assembly code function
 
 **Purpose:**
 
-Converts a pair of bitmaps for 8 LEDs ('on' and 'flash' states) into the correct pair of register states for a [PCA9551 8-bit I2C-bus LED driver](https://www.nxp.com/docs/en/data-sheet/PCA9551.pdf)
+Converts a pair of bitmaps for 8 LEDs ('on' and 'flash' states) into the correct pair of register states for a [PCA9551 8-bit I2C-bus LED driver](https://www.nxp.com/docs/en/data-sheet/PCA9551.pdf).
 
 **Arguments:**
 
@@ -491,7 +527,7 @@ The `Leds.c` module draws upon the `I2c_51.a51` and `Led_bits.a51` modules to pr
 
 **Purpose:**
 
-Initialises the `Leds.c` module, clearing the 8-bit LED array to an "all off" state (see `clear_leds()` below)
+Initialises the `Leds.c` module, clearing the 8-bit LED array to an "all off" state (see `clear_leds()` below).
 
 **Arguments:**
 
@@ -505,7 +541,7 @@ None
 
 **Purpose:**
 
-Clears the 8-bit LED array to an "all off" state
+Clears the 8-bit LED array to an "all off" state.
 
 **Arguments:**
 
@@ -519,7 +555,7 @@ None
 
 **Purpose:**
 
-Switches on (steadily) those LEDs in the array for which the associated bit in the bit map is set (those with the bit clear are unaffected)
+Switches on (steadily) those LEDs in the array for which the associated bit in the bit map is set (those with the bit clear are unaffected).
 
 **Arguments:**
 
@@ -533,7 +569,7 @@ None
 
 **Purpose:**
 
-Switches off (steadily) those LEDs in the array for which the associated bit in the bit map is set (those with the bit clear are unaffected)
+Switches off (steadily) those LEDs in the array for which the associated bit in the bit map is set (those with the bit clear are unaffected).
 
 **Arguments:**
 
@@ -547,7 +583,7 @@ None
 
 **Purpose:**
 
-Sets to flashing mode those LEDs in the array for which the associated bit in the bit map is set (those with the bit clear are unaffected)
+Sets to flashing mode those LEDs in the array for which the associated bit in the bit map is set (those with the bit clear are unaffected).
 
 **Arguments:**
 
@@ -561,7 +597,7 @@ None
 
 **Purpose:**
 
-Sets to blinking mode those LEDs in the array for which the associated bit in the bit map is set (those with the bit clear are unaffected)
+Sets to blinking mode those LEDs in the array for which the associated bit in the bit map is set (those with the bit clear are unaffected).
 
 **Arguments:**
 
@@ -575,7 +611,7 @@ None
 
 **Purpose:**
 
-Forces an update of the LEDs from the externally visible values `leds_on` and `leds_flash`, which are normally manipulated implictly by the `set_leds_...()` functions
+Forces an update of the LEDs from the externally visible values `leds_on` and `leds_flash`, which are normally manipulated implictly by the `set_leds_...()` functions.
 
 **Arguments:**
 
@@ -589,7 +625,7 @@ None
 
 **Purpose:**
 
-Holds an 8-bit bitmap containing half of the state of each associated LED
+Holds an 8-bit bitmap containing half of the state of each associated LED.
 
 **Values:**
 
@@ -606,7 +642,7 @@ Changed by `init_leds()`, `clear_leds()`, `set_leds_on()`, `set_leds_off()`, `se
 
 **Purpose:**
 
-Holds an 8-bit bitmap containing half of the state of each associated LED
+Holds an 8-bit bitmap containing half of the state of each associated LED.
 
 **Values:**
 
@@ -635,7 +671,7 @@ The `Serial.a51` module will run on any 8051-variant microcontroller as long as 
 
 **Purpose:**
 
-Initialises the `Serial.a51` module, including setting up serial interrupts ("ticks"), flushing the receive buffer and configuring the UART (using Timer 1) to operate at the specified baud rate
+Initialises the `Serial.a51` module, including setting up serial interrupts ("ticks"), flushing the receive buffer and configuring the UART (using Timer 1) to operate at the specified baud rate.
 
 **Arguments:**
 
@@ -649,7 +685,7 @@ None
 
 **Purpose:**
 
-Empties the receive buffer of any characters, returning with it empty
+Empties the receive buffer of any characters, returning with it empty.
 
 **Arguments:**
 
@@ -678,7 +714,7 @@ Attempts to send a serial character through the UART **without blocking** (i.e. 
 
 **Purpose:**
 
-Indicates whether the UART transmitter is ready to accept a character to send (i.e. not busy), so that a call to `put_serial_char()` will succeed unless the /CTS handshake input line is high (false)
+Indicates whether the UART transmitter is ready to accept a character to send (i.e. not busy), so that a call to `put_serial_char()` will succeed unless the /CTS handshake input line is high (false).
 
 **Values:**
 
@@ -687,14 +723,14 @@ Indicates whether the UART transmitter is ready to accept a character to send (i
 
 **Transitions:**
 
-Set by serial interrupt routine when the UART becomes free — and also by `init_serial()` 
-Cleared by `put_serial_char()` when a character is successfully dispatched to the UART
+* Set by serial interrupt routine when the UART becomes free — and also by `init_serial()` 
+* Cleared by `put_serial_char()` when a character is successfully dispatched to the UART
 
 ### `get_serial_char()` function
 
 **Purpose:**
 
-Attempts to extract a serial character from the receive buffer **without blocking** (i.e. returns immediately whether or not a character can be extracted), updating the /RTS handshake output line to low (true) if removal of a character brings the receive buffer to a "nearly empty" state
+Attempts to extract a serial character from the receive buffer **without blocking** (i.e. returns immediately whether or not a character can be extracted), updating the /RTS handshake output line to low (true) if removal of a character brings the receive buffer to a "nearly empty" state.
 
 **Arguments:**
 
@@ -709,7 +745,7 @@ None
 
 **Purpose:**
 
-Indicates whether the receive buffer contains any characters, so that a call to `put_serial_char()` will succeed
+Indicates whether the receive buffer contains any characters, so that a call to `put_serial_char()` will succeed.
 
 **Values:**
 
@@ -718,14 +754,14 @@ Indicates whether the receive buffer contains any characters, so that a call to 
 
 **Transitions:**
 
-Set by serial interrupt routine when new receive character arrives
-Cleared by `get_serial_char()` when it empties receive buffer — and also by `flush_serial_input()` or `init_serial()`
+* Set by serial interrupt routine when new receive character arrives
+* Cleared by `get_serial_char()` when it empties receive buffer — and also by `flush_serial_input()` or `init_serial()`
 
 ### `serial_rx_overflow` status bit
 
 **Purpose:**
 
-Indicates whether the receive buffer has overflowed, so that the most recently received characters have not been captured
+Indicates whether the receive buffer has overflowed, so that the most recently received characters have not been captured.
 
 **Values:**
 
@@ -734,8 +770,8 @@ Indicates whether the receive buffer has overflowed, so that the most recently r
 
 **Transitions:**
 
-Set by serial interrupt routine when overflow occurs
-Cleared by a call to `flush_serial_input()` or `init_serial()`
+* Set by serial interrupt routine when overflow occurs
+* Cleared by a call to `flush_serial_input()` or `init_serial()`
 
 ## Other header files
 
@@ -752,4 +788,4 @@ The following stand-alone header files provide definitions for the system as a w
 * [AT89S53 — 8-bit 8051-derivative Microcontroller with 12K Bytes Flash](http://ww1.microchip.com/downloads/en/devicedoc/doc0787.pdf)
 * [AT89S8253 — 8-bit 8051-derivative Microcontroller with 12K Bytes Flash](http://ww1.microchip.com/downloads/en/devicedoc/doc3286.pdf)
 * [PCA9551 — 8-bit I2C-bus LED driver with programmable blink rates](https://www.nxp.com/docs/en/data-sheet/PCA9551.pdf)
-
+* [8051 Microcontrollers Hardware Manual](http://ww1.microchip.com/downloads/en/DeviceDoc/doc4316.pdf)
