@@ -192,7 +192,278 @@ None
 
 ## [`I2c_51.a51`](/I2c_51.a51) module (and [`header`](/I2c_51.h) file)
 
-*to be added*
+The `I2c_51.a51` module provides I2C bus master functions to communicate with one or more I2C bus slave devices.
+
+The 8051 microcontroller does not provide a hardware I2C peripheral, so these functions are achieved by "bit-banging" I/O ports in the foreground.  As written, this module depends on the `Timers.a51` module to provide an I2C bus watchdog timer to guard against the possibility of a bus malfunction leading to a "lock-up" condition.  If it is not possible to provide this dependency, then the `set_I2C_watchdog()` function can be stubbed out and the `i2c_tout()` status bit forced to zero.
+
+The `I2c_51.a51` module should run on any 8051-variant microcontroller.
+
+By default (see [`Ports.inc`](/Ports.inc)), the I2C bus lines are assigned to P0.0 (SCL) and P0.1 (SDA).
+
+*Note: In this module, the 7-bit bus addresses for I2C slaves must be presented in left-justified 8-bit format (i.e. shifted to the left by one bit, which is the same as multiplying it by two).  It is therefore important to inspect carefully the data sheet for an I2C slave, as some present the slave address in unshifted 7-bit format whereas others show it in a left-justified position.  In any case, the least significant bit of an 8-bit slave address presented as an argument to the `I2c_51.a51` functions is always discarded.*
+
+### `init_i2c()` function
+
+**Purpose:**
+
+Attempts to initialise the I2C bus by releasing the SCL and SDA lines from the microcontroller side, then sending a series of 9 clock pulses to release the SDA line in the event that a slave device has jammed up partway through a transaction.  
+
+**Arguments:**
+
+None
+
+**Returns:**
+
+* 1 if the I2C bus was initialised successfully
+* 0 if an I2C bus timeout occurred during the operation (indicating that the bus remains jammed)
+
+### `set_i2c_lng()` function
+
+**Purpose:**
+
+Must be called prior to invoking any of the `..._i2c_lng()` functions in order to specify the I2C slave bus address (main 7-bit address for the device) for those operations.  This is necessary because the interface definition between assembly code and 'C' code does not allow passing of the full set of arguments that would otherwise needed for these function calls.  
+
+**Arguments:**
+
+Unsigned 8-bit `address` containing 7-bit slave address as its upper 7 bits (the least significant bit is ignored).  See important note under [`I2c_51.a51` module](https://github.com/Chapmip/8051-assembly-c-i2c-timers-serial/blob/master/README.md#i2c_51a51-module-and-header-file) above — depending on the way that the slave address is specified, it may be necessary to shift it one bit to the left (i.e. multiply it by two) before providing it as an 8-bit argument.
+
+**Returns:**
+
+None
+
+### `i2c_tout_err` status bit
+
+**Purpose:**
+
+Indicates that the failure of a previous I2C bus function was caused by a timeout on the I2C bus, as opposed to the lack of an acknowledgement from a slave device.
+
+**Values:**
+
+* 1 (true bit) if the previous I2C bus operation failed due to an I2C bus timeout
+* 0 (false bit) if the previous I2C bus operation either succeeded or failed due to the lack of an acknowledgement from a slave device
+
+**Transitions:**
+
+Updated prior to exit by all functions in the `I2c_51.a51` module **except** `set_i2c_lng()`.
+
+### `poll_i2c()` function
+
+**Purpose:**
+
+Polls for the presence or absence of an I2C bus slave at the specified I2C bus address.
+
+**Arguments:**
+
+Unsigned 8-bit `address` containing 7-bit slave address as its upper 7 bits (the least significant bit is ignored).  See important note under [`I2c_51.a51` module](https://github.com/Chapmip/8051-assembly-c-i2c-timers-serial/blob/master/README.md#i2c_51a51-module-and-header-file) above — depending on the way that the slave address is specified, it may be necessary to shift it one bit to the left (i.e. multiply it by two) before providing it as an 8-bit argument.
+
+**Returns:**
+
+* 1 if the I2C slave responded
+* 0 if the I2C slave did not respond or an I2C bus timeout occurred during the operation
+
+### `poll_i2c_sub()` function
+
+**Purpose:**
+
+Polls for the presence or absence of an I2C bus slave at the specified I2C bus address and sub-address within the device.
+
+**Arguments:**
+
+Unsigned 16-bit `address` consisting of two 8-bit fields:
+
+* Most significant byte contains the 7-bit slave address as its upper 7 bits (the least significant bit is ignored).  See important note under [`I2c_51.a51` module](https://github.com/Chapmip/8051-assembly-c-i2c-timers-serial/blob/master/README.md#i2c_51a51-module-and-header-file) above — depending on the way that the slave address is specified, it may be necessary to shift it one bit to the left (i.e. multiply it by two) before providing it as an 8-bit argument.
+* Least significant byte contains the 8-bit sub-address to be accessed within the I2C slave device.
+
+**Returns:**
+
+* 1 if the I2C slave responded
+* 0 if the I2C slave did not respond or an I2C bus timeout occurred during the operation
+
+### `write_i2c()` function
+
+**Purpose:**
+
+Attempts to write data to an I2C bus slave at the specified I2C bus address without any sub-addressing within the device.
+
+**Arguments:**
+
+Unsigned 8-bit `address` containing 7-bit slave address as its upper 7 bits (the least significant bit is ignored).  See important note under [`I2c_51.a51` module](https://github.com/Chapmip/8051-assembly-c-i2c-timers-serial/blob/master/README.md#i2c_51a51-module-and-header-file) above — depending on the way that the slave address is specified, it may be necessary to shift it one bit to the left (i.e. multiply it by two) before providing it as an 8-bit argument.
+
+Pointer `ptr` to an array of unsigned 8-bit data values in internal RAM
+
+Unsigned 8-bit `count` of the number of values to write (should be less than or equal to the length of the array pointed to by `ptr`)
+
+**Returns:**
+
+* 1 if the I2C slave responded
+* 0 if the I2C slave did not respond or an I2C bus timeout occurred during the operation
+
+### `write_i2c_sub()` function
+
+**Purpose:**
+
+Attempts to write data to an I2C bus slave at the specified I2C bus address and starting sub-address within the device.
+
+**Arguments:**
+
+Unsigned 16-bit `address` consisting of two 8-bit fields:
+
+* Most significant byte contains the 7-bit slave address as its upper 7 bits (the least significant bit is ignored).  See important note under [`I2c_51.a51` module](https://github.com/Chapmip/8051-assembly-c-i2c-timers-serial/blob/master/README.md#i2c_51a51-module-and-header-file) above — depending on the way that the slave address is specified, it may be necessary to shift it one bit to the left (i.e. multiply it by two) before providing it as an 8-bit argument.
+* Least significant byte contains the 8-bit starting sub-address to be accessed within the I2C slave device.
+
+Pointer `ptr` to an array of unsigned 8-bit data values in internal RAM
+
+Unsigned 8-bit `count` of the number of values to write (should be less than or equal to the length of the array pointed to by `ptr`)
+
+**Returns:**
+
+* 1 if the I2C slave responded
+* 0 if the I2C slave did not respond or an I2C bus timeout occurred during the operation
+
+### `write_i2c_lng()` function
+
+**Purpose:**
+
+Attempts to write data to an I2C bus slave at the specified I2C bus address and long starting sub-address (16 bits) within the device.
+
+*It is essential that `set_i2c_lng()` is called with the required I2C bus address with the slave before invoking this function*
+
+**Arguments:**
+
+Unsigned 16-bit `subaddr` is the starting sub-address (long 16 bit form) to be accessed within the I2C slave device
+
+Pointer `ptr` to an array of unsigned 8-bit data values in internal RAM
+
+Unsigned 8-bit `count` of the number of values to write (should be less than or equal to the length of the array pointed to by `ptr`)
+
+**Returns:**
+
+* 1 if the I2C slave responded
+* 0 if the I2C slave did not respond or an I2C bus timeout occurred during the operation
+
+### `read_i2c()` function
+
+**Purpose:**
+
+Attempts to read data from an I2C bus slave at the specified I2C bus address without any sub-addressing within the device.
+
+**Arguments:**
+
+Unsigned 8-bit `address` containing 7-bit slave address as its upper 7 bits (the least significant bit is ignored).  See important note under [`I2c_51.a51` module](https://github.com/Chapmip/8051-assembly-c-i2c-timers-serial/blob/master/README.md#i2c_51a51-module-and-header-file) above — depending on the way that the slave address is specified, it may be necessary to shift it one bit to the left (i.e. multiply it by two) before providing it as an 8-bit argument.
+
+Pointer `ptr` to an array of unsigned 8-bit data values in internal RAM
+
+Unsigned 8-bit `count` of the number of values to read (should be less than or equal to the length of the array pointed to by `ptr`)
+
+**Returns:**
+
+* 1 if the I2C slave responded
+* 0 if the I2C slave did not respond or an I2C bus timeout occurred during the operation
+
+### `read_i2c_sub()` function
+
+**Purpose:**
+
+Attempts to read data from an I2C bus slave at the specified I2C bus address and starting sub-address within the device.
+
+**Arguments:**
+
+Unsigned 16-bit `address` consisting of two 8-bit fields:
+
+* Most significant byte contains the 7-bit slave address as its upper 7 bits (the least significant bit is ignored).  See important note under [`I2c_51.a51` module](https://github.com/Chapmip/8051-assembly-c-i2c-timers-serial/blob/master/README.md#i2c_51a51-module-and-header-file) above — depending on the way that the slave address is specified, it may be necessary to shift it one bit to the left (i.e. multiply it by two) before providing it as an 8-bit argument.
+* Least significant byte contains the 8-bit starting sub-address to be accessed within the I2C slave device.
+
+Pointer `ptr` to an array of unsigned 8-bit data values in internal RAM
+
+Unsigned 8-bit `count` of the number of values to read (should be less than or equal to the length of the array pointed to by `ptr`)
+
+**Returns:**
+
+* 1 if the I2C slave responded
+* 0 if the I2C slave did not respond or an I2C bus timeout occurred during the operation
+
+### `read_i2c_lng()` function
+
+**Purpose:**
+
+Attempts to read data from an I2C bus slave at the specified I2C bus address and long starting sub-address (16 bits) within the device.
+
+*It is essential that `set_i2c_lng()` is called with the required I2C bus address with the slave before invoking this function*
+
+**Arguments:**
+
+Unsigned 16-bit `subaddr` is the starting sub-address (long 16 bit form) to be accessed within the I2C slave device
+
+Pointer `ptr` to an array of unsigned 8-bit data values in internal RAM
+
+Unsigned 8-bit `count` of the number of values to read (should be less than or equal to the length of the array pointed to by `ptr`)
+
+**Returns:**
+
+* 1 if the I2C slave responded
+* 0 if the I2C slave did not respond or an I2C bus timeout occurred during the operation
+
+### `comp_i2c()` function
+
+**Purpose:**
+
+Attempts to compare data from an I2C bus slave (at the specified I2C bus address without any sub-addressing within the device) with an array of data held in internal RAM.
+
+**Arguments:**
+
+Unsigned 8-bit `address` containing 7-bit slave address as its upper 7 bits (the least significant bit is ignored).  See important note under [`I2c_51.a51` module](https://github.com/Chapmip/8051-assembly-c-i2c-timers-serial/blob/master/README.md#i2c_51a51-module-and-header-file) above — depending on the way that the slave address is specified, it may be necessary to shift it one bit to the left (i.e. multiply it by two) before providing it as an 8-bit argument.
+
+Pointer `ptr` to an array of unsigned 8-bit data values in internal RAM
+
+Unsigned 8-bit `count` of the number of values to compare (should be less than or equal to the length of the array pointed to by `ptr`)
+
+**Returns:**
+
+* 1 if the operation completed with an exact match between the data in the slave device and that in the array in internal RAM
+* 0 if the data in the slave device does not match that in the array in internal RAM, or if the I2C slave did not respond or an I2C bus timeout occurred during the operation
+
+### `comp_i2c_sub()` function
+
+**Purpose:**
+
+Attempts to compare data from an I2C bus slave (at the specified I2C bus address and starting sub-address within the device) with an array of data held in internal RAM.
+
+**Arguments:**
+
+Unsigned 16-bit `address` consisting of two 8-bit fields:
+
+* Most significant byte contains the 7-bit slave address as its upper 7 bits (the least significant bit is ignored).  See important note under [`I2c_51.a51` module](https://github.com/Chapmip/8051-assembly-c-i2c-timers-serial/blob/master/README.md#i2c_51a51-module-and-header-file) above — depending on the way that the slave address is specified, it may be necessary to shift it one bit to the left (i.e. multiply it by two) before providing it as an 8-bit argument.
+* Least significant byte contains the 8-bit starting sub-address to be accessed within the I2C slave device.
+
+Pointer `ptr` to an array of unsigned 8-bit data values in internal RAM
+
+Unsigned 8-bit `count` of the number of values to compare (should be less than or equal to the length of the array pointed to by `ptr`)
+
+**Returns:**
+
+* 1 if the operation completed with an exact match between the data in the slave device and that in the array in internal RAM
+* 0 if the data in the slave device does not match that in the array in internal RAM, or if the I2C slave did not respond or an I2C bus timeout occurred during the operation
+
+### `comp_i2c_lng()` function
+
+**Purpose:**
+
+Attempts to compare data from an I2C bus slave (at the specified I2C bus address and long starting sub-address (16 bits) within the device) with an array of data held in internal RAM.
+
+*It is essential that `set_i2c_lng()` is called with the required I2C bus address with the slave before invoking this function*
+
+**Arguments:**
+
+Unsigned 16-bit `subaddr` is the starting sub-address (long 16 bit form) to be accessed within the I2C slave device
+
+Pointer `ptr` to an array of unsigned 8-bit data values in internal RAM
+
+Unsigned 8-bit `count` of the number of values to compare (should be less than or equal to the length of the array pointed to by `ptr`)
+
+**Returns:**
+
+* 1 if the operation completed with an exact match between the data in the slave device and that in the array in internal RAM
+* 0 if the data in the slave device does not match that in the array in internal RAM, or if the I2C slave did not respond or an I2C bus timeout occurred during the operation
 
 ## [`Led_bits.a51`](/Led_bits.a51) module (and [`header`](/Led_bits.h) file)
 
