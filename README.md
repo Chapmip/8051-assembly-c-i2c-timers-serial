@@ -1,6 +1,6 @@
 # 8051 assembly code modules for I2C, Timers and Serial functions
 
-These assembly code modules for the [8051 series](https://www.nxp.com/docs/en/data-sheet/8XC51_8XC52.pdf) of 8-bit microcontrollers are drawn from several of my commercial designs.  They demonstrate the way that "bare-metal" assembly code (for speed) can be integrated successfully with 'C' code middleware and application code in a readable fashion.  I have removed any commercially-sensitive elements and included a "vanilla" demonstration application that utilises all of the modules so that the combined package can be adopted by others for learning, prototyping or implementation.
+These assembly code modules for the [8051 series](https://www.nxp.com/docs/en/data-sheet/8XC51_8XC52.pdf) of 8-bit microcontrollers are drawn from several of my commercial designs.  They demonstrate the way that "bare-metal" assembly code (for speed) can be integrated successfully with 'C' code in a modular and readable fashion.  I have removed any commercially-sensitive elements and included a "vanilla" demonstration application that utilises all of the modules so that the combined package can be adopted by others for learning, prototyping or implementation.
 
 # Quick links
 
@@ -18,9 +18,9 @@ These assembly code modules for the [8051 series](https://www.nxp.com/docs/en/da
 
 # History
 
-I created these assembly code modules during the early 2000s for various commercial products using [8051-series](https://www.nxp.com/docs/en/data-sheet/8XC51_8XC52.pdf) microcontrollers from Philips (now NXP) and Atmel.  As such, they are well tried-and-tested, at least within my own range of use cases.  I believe that they remain applicable to the still-available modern derivatives of this microcontroller family.
+I created these assembly code modules during the early 2000s for various commercial products using [8051-series](https://www.nxp.com/docs/en/data-sheet/8XC51_8XC52.pdf) microcontrollers from Philips (now NXP) and Atmel.  As such, the modules are well tried-and-tested, at least within my own range of use cases.  I believe that they remain applicable to the still-available modern derivatives of this microcontroller family.
 
-My toolchain for the development of this code was an early version of the Keil A51/C51 assembler/compiler/linker running in an MS-DOS command window under Windows 98.  Despite the ancient provenance of this setup, I believe that it should still be readily possible to work with this code using a modern toolchain (not necessarily Keil).  The 8051 instruction set has not changed, so the code itself should not require any modifications beyond the accommodation of any special functions on new microcontroller variants.  It is possible, though, that some changes may be needed to some of the assembler directives, or perhaps even the framework for integrating assembly routines into 'C' code.  Consult your assembler and compiler manuals for assistance!
+My toolchain for the development of this code was an early version of the Keil A51/C51 assembler/compiler running in an MS-DOS command window under Windows 98.  Despite the ancient provenance of this setup, I believe that it is still readily possible to work with this code using a modern toolchain (not necessarily Keil).  The 8051 instruction set has not changed, so the code itself should not require any modifications beyond the accommodation of any special functions on new microcontroller variants.  It is possible, though, that some changes may be needed to some of the assembler directives, or perhaps even the framework for integrating assembly routines into 'C' code.  Consult your assembler and compiler manuals for assistance!
 
 # Hierarchy of code modules
 
@@ -362,7 +362,7 @@ Unsigned 8-bit `count` of the number of values to write (should be <= `sizeof` a
 
 Attempts to write data  from an array in internal RAM to an I2C bus slave at the specified I2C bus address and long starting sub-address (16 bits) within the device.
 
-*It is essential that `set_i2c_lng()` is called with the required I2C bus address with the slave before invoking this function*
+*It is essential that `set_i2c_lng()` is called with the required I2C bus address with the slave before invoking this function.*
 
 **Arguments:**
 
@@ -424,7 +424,7 @@ Unsigned 8-bit `count` of the number of values to read (should be <= `sizeof` ar
 
 Attempts to read data to an array in internal RAM from an I2C bus slave at the specified I2C bus address and long starting sub-address (16 bits) within the device.
 
-*It is essential that `set_i2c_lng()` is called with the required I2C bus address with the slave before invoking this function*
+*It is essential that `set_i2c_lng()` is called with the required I2C bus address with the slave before invoking this function.*
 
 **Arguments:**
 
@@ -486,7 +486,7 @@ Unsigned 8-bit `count` of the number of values to compare (should be <= `sizeof`
 
 Attempts to compare data in an array in internal RAM with that read from an I2C bus slave at the specified I2C bus address and long starting sub-address (16 bits) within the device.  This routine may be useful to confirm that a previous write to a series of sub-addresses (for example, in a memory device) has been successful.
 
-*It is essential that `set_i2c_lng()` is called with the required I2C bus address with the slave before invoking this function*
+*It is essential that `set_i2c_lng()` is called with the required I2C bus address with the slave before invoking this function.*
 
 **Arguments:**
 
