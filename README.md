@@ -1,0 +1,474 @@
+# 8051 assembly code modules for I2C, Timers and Serial functions
+
+These assembly code modules for the [8051 series](https://www.nxp.com/docs/en/data-sheet/8XC51_8XC52.pdf) of 8-bit microcontrollers are drawn from several of my commercial products.  They demonstrate the way that "bare-metal" assembly code (for speed) can be integrated successfully with 'C' code middleware and application code in a readable fashion.  I have redacted any commercially-sensitive parts and associated them with a "vanilla" demonstration application so that I offer them to others freely for learning, prototyping or implementation.
+
+# Quick links
+
+*to be added*
+
+# History
+
+I created these assembly code modules during the early 2000s for various commercial products using [8051-series](https://www.nxp.com/docs/en/data-sheet/8XC51_8XC52.pdf) microcontrollers from Philips (now NXP) and Atmel.  As such, they are well tried-and-tested, at least within my own range of use cases.  I believe that they remain applicable to the still-available modern derivatives of this microcontroller family.
+
+My toolchain for the development of this code was an early version of the Keil A51/C51 assembler/compiler/linker running in an MS-DOS command window under Windows 98.  Despite the ancient provenance of this setup, I believe that it should still be readily possible to work with this code using a modern toolchain (not necessarily Keil).  The 8051 instruction set has not changed, so the code itself should not require any modifications beyond the accommodation of any special functions on new microcontroller variants.  It is possible, though, that some changes may be needed to some of the assembler directives, or perhaps even the framework for integrating assembly routines into 'C' code.  Consult your assembler and compiler manuals for assistance!
+
+# Hierarchy of code modules
+
+The code modules in this repository fall into the following hierarchy:
+
+![Hierarchy of 8051 code modules](/photos/8051-code-hierarchy.png?raw=true "Hierarchy of 8051 code modules")
+
+# Descriptions of code modules
+
+The individual code modules are described below, together with guidance on their use.
+
+## [`Demo.c`](/Demo.c) module
+
+The `Demo.c` module serves only as a demonstration application that integrates the other modules and shows how they can operate together.
+
+### External hardware requirements
+
+The minimum requirement to demonstrate the running of this demonstration application is an LED connected via a series resistor to the Vdd (+5V) supply from the P1.7 pin.  This diagnostic output will also confirm that the `Timer.a51` module is operating as expected.
+
+To show the functionality of the `I2c_51.a51`, `Leds.c` and `Led_bits.a51` modules, it is necessary to connect a [PCA9551 8-bit I2C-bus LED driver](https://www.nxp.com/docs/en/data-sheet/PCA9551.pdf) to the nominated I2C bus lines P0.0 (SCL) and P0.1 (SDA).  These two pins must also be fitted with pull-up resistors to the Vdd (+5V) supply, as they operate only in "open-drain" mode.  These resistors should be in the range 2k2 to 6k8 ohms: the exact values are not critical provided that short leads (< 20cm) are used to connect the PCA9551.  The only PCA 9551 outputs exercised by `Demo.c` are LED7, LED6, LED5 and LED4, so only these outputs need to be connected to LEDs through suitable series resistors (say 470 ohms) up to the Vdd (+5V) supply.
+
+To show the functionality of the `Serial.a51` module, it is necessary to connect a serial device **at logic levels** (0V to Vdd) to P3.0 (TXD output from microcontroller) and P3.1 (RXD serial input to microcontroller).  It is also necessary to connect P2.7 (/CTS input to microcontroller) to ground, in order to indicate that the connected serial device is ready to receive serial data from the microcontroller.
+
+### `Demo.c` operation
+
+On startup, the `main()` code in this module:
+
+* Initialises I/O ports on microcontroller to starting states (all high by default)
+* Disables the SPI port function (example for an [AT89S53](http://ww1.microchip.com/downloads/en/devicedoc/doc0787.pdf) microcontroller — remove if not implemented on chosen device)
+* Initialises the `Timer.a51`, `Serial.a51`, `I2c_51.a51` and `Leds.a51` module functions
+* For one second, lights (steadily) the LED7 output from the PCA9551 (defined in code as `LED_A8`)
+* For ten seconds, flashes the LED6 output from the PCA9551 (defined in code as `LED_A7`) and flashes quickly (3Hz) the diagnostic LED (on P1.7)
+* Lights (steadily) the LED5 output from the PCA9551 (defined in code as `LED_A6`) and flashes slowly (1Hz) the diagnostic LED (on P1.7)
+
+At this point, the `main()` code waits in a serial input loop in which it:
+
+* Waits for a serial input character to arrive on the P3.1 (RXD) line at 19,200 baud (8 data bits, no parity bit, 1 stop bit)
+* If the serial input character is anything other than a `<CONTROL-D>` (ASCII 4), then it is echoed back as a serial output character sent on the P3.0 (TXD) line in the same format
+* If the serial input characted is a `<CONTROL-D>` (ASCII 4), then the serial input loop is terminated, otherwise it repeats as above.
+
+When the serial input loop is terminated, the `main()` code:
+
+* Switches off the LED5 output from the PCA9551
+* Starts flashing the LED4 output from the PCA9551 (defined in code as `LED_A5`)
+* Enters an infinite loop, to be continued until the microcontroller is reset or power-cycled.
+
+## [`Timers.a51`](/Timers.a51) module (and [`header`](/Timers.h) file)
+
+The `Timers.a51` module provides the following interrupt-driven background services:
+
+* Two general-purpose timeout timers
+* An I2C bus inactivity timeout timer (for the `I2c_51.a51` module)
+* Ability to flash an LED (on P1.7 by default)
+* Optional periodic watchdog resetting for AT89S53 and AT89S8253 microcontrollers
+
+The `Timer.a51` module is only suitable for an 8052-variant microcontroller (e.g. [87C52](https://www.nxp.com/docs/en/data-sheet/8XC51_8XC52.pdf), [AT89S53](http://ww1.microchip.com/downloads/en/devicedoc/doc0787.pdf) and [AT89S8253](http://ww1.microchip.com/downloads/en/devicedoc/doc3286.pdf)) as it relies on Timer 2, which is not provided on a basic 8051 device.
+
+*Note: One of the quirks of my old version of the assembler was that it did not intrinsically support the extra registers in an 8052 microcontroller as compared to the base 8051 version.  I therefore added equates to the `Timers.a51` code (highlighted by asterisks in my comments) to cover these extra registers and function bits.  It is possible that more recent assemblers include these definitions by default and will raise an error when they are re-defined by my code.  The simple solution should be to remove the highlighted section from my code.*
+
+### `init_timers()` function
+
+**Purpose:**
+
+Initialises the `Timers.a51` module, including setting up regular Timer 2 interrupts ("ticks") at the specified periodic interval
+
+**Arguments:**
+
+Unsigned 16-bit `period` specifying the number of CPU cycles between Timer 2 interrupts (see `CYCLES` frequency in [`Timing.h`](/Timing.h))
+
+**Returns:**
+
+None
+
+### `set_main_timeout()` function
+
+**Purpose:**
+
+Configures the `main_timeout` flag (see [`Timers.h`](/Timers.h)) to be set automatically after the specified number of Timer 2 ticks have elapsed (clears `main_timeout` initially)
+
+**Arguments:**
+
+Unsigned 16-bit `ticks` specifying the number of Timer 2 "ticks" (see `TICK_RATE` frequency in [`Timing.h`](/Timing.h)) before `main_timeout` is set
+
+**Returns:**
+
+None
+
+### `main_timeout()` status bit
+
+See `set_main_timeout()` above.
+
+### `set_aux_timeout()` function
+
+**Purpose:**
+
+Configures the `aux_timeout` flag (see [`Timers.h`](/Timers.h)) to be set automatically after the specified number of Timer 2 ticks have elapsed (clears `aux_timeout` initially)
+
+**Arguments:**
+
+Unsigned 16-bit `ticks` specifying the number of Timer 2 "ticks" (see `TICK_RATE` frequency in [`Timing.h`](/Timing.h)) before `aux_timeout` is set
+
+**Returns:**
+
+None
+
+### `aux_timeout()` status bit
+
+See `set_aux_timeout()` above.
+
+### `set_I2C_watchdog()` function
+
+**Purpose:**
+
+Configures the `i2c_tout` flag (see [`Timers.h`](/Timers.h)) to be set automatically once 256 Timer 2 "ticks" (see `TICK_RATE` frequency in [`Timing.h`](/Timing.h)) have elapsed (clears `i2c_tout` initially)
+
+**Arguments:**
+
+None
+
+**Returns:**
+
+None
+
+### `i2c_tout()` status bit
+
+See `set_I2C_watchdog()` above.
+
+### `set_L1_on()` function
+
+**Purpose:**
+
+Switches on (steadily) LED L1 (on P1.7 by default)
+
+**Arguments:**
+
+None
+
+**Returns:**
+
+None
+
+### `set_L1_off()` function
+
+**Purpose:**
+
+Switches off (steadily) LED L1 (on P1.7 by default)
+
+**Arguments:**
+
+None
+
+**Returns:**
+
+None
+
+### `set_L1_flash()` function
+
+**Purpose:**
+
+Configures LED L1 (on P1.7 by default) to flash automatically with a specified half-period
+
+**Arguments:**
+
+Unsigned 8-bit `period` specifying the number of Timer 2 "ticks" (see `TICK_RATE` frequency in [`Timing.h`](/Timing.h)) for a flash half-period (i.e. 2 x half-period for a full cycle)
+
+**Returns:**
+
+None
+
+## [`I2c_51.a51`](/I2c_51.a51) module (and [`header`](/I2c_51.h) file)
+
+*to be added*
+
+## [`Led_bits.a51`](/Led_bits.a51) module (and [`header`](/Led_bits.h) file)
+
+The `Led_bits.a51` is a helper module providing efficient assembly code functions to support the `Leds.c` module.
+
+### `led_bits_calc()` function
+
+**Purpose:**
+
+Converts a pair of bitmaps for 8 LEDs ('on' and 'flash' states) into the correct pair of register states for a [PCA9551 8-bit I2C-bus LED driver](https://www.nxp.com/docs/en/data-sheet/PCA9551.pdf)
+
+**Arguments:**
+
+Unsigned 8-bit bitmaps `bmap_on` and `bmap_flash`, plus pointer `pair` to a pair of unsigned 8-bit values in internal RAM to receive the converted output
+
+**Returns:**
+
+No explicit return values, but the two 8-bit values pointed to by `pair` are updated to the converted values
+
+## [`Leds.c`](/Leds.c) module (and [`header`](/Leds.h) file)
+
+The `Leds.c` module draws upon the `I2c_51.a51` and `Led_bits.a51` modules to provide an abstracted interface to an 8-bit LED array controlled by a [PCA9551 8-bit I2C-bus LED driver](https://www.nxp.com/docs/en/data-sheet/PCA9551.pdf) 
+
+### `init_leds()` function
+
+**Purpose:**
+
+Initialises the `Leds.c` module, clearing the 8-bit LED array to an "all off" state (see `clear_leds()` below)
+
+**Arguments:**
+
+None
+
+**Returns:**
+
+None
+
+### `clear_leds()` function
+
+**Purpose:**
+
+Clears the 8-bit LED array to an "all off" state
+
+**Arguments:**
+
+None
+
+**Returns:**
+
+None
+
+### `set_leds_on()` function
+
+**Purpose:**
+
+Switches on (steadily) those LEDs in the array for which the associated bit in the bit map is set (those with the bit clear are unaffected)
+
+**Arguments:**
+
+Unsigned 8-bit bitmap in which the LEDs to be switched on steadily are set to 1
+
+**Returns:**
+
+None
+
+### `set_leds_off()` function
+
+**Purpose:**
+
+Switches off (steadily) those LEDs in the array for which the associated bit in the bit map is set (those with the bit clear are unaffected)
+
+**Arguments:**
+
+Unsigned 8-bit bitmap in which the LEDs to be switched off steadily are set to 1
+
+**Returns:**
+
+None
+
+### `set_leds_flash()` function
+
+**Purpose:**
+
+Sets to flashing mode those LEDs in the array for which the associated bit in the bit map is set (those with the bit clear are unaffected)
+
+**Arguments:**
+
+Unsigned 8-bit bitmap in which the LEDs to be set to flashing mode are set to 1
+
+**Returns:**
+
+None
+
+### `set_leds_blink()` function
+
+**Purpose:**
+
+Sets to blinking mode those LEDs in the array for which the associated bit in the bit map is set (those with the bit clear are unaffected)
+
+**Arguments:**
+
+Unsigned 8-bit bitmap in which the LEDs to be set to blinking mode are set to 1
+
+**Returns:**
+
+None
+
+### `update_leds()` function
+
+**Purpose:**
+
+Forces an update of the LEDs from the externally visible values `leds_on` and `leds_flash`, which are normally manipulated implictly by the `set_leds...()` functions
+
+**Arguments:**
+
+None
+
+**Returns:**
+
+None
+
+### `leds_on` byte value
+
+**Purpose:**
+
+Holds an 8-bit bitmap containing half of the state of each associated LED
+
+**Values:**
+
+For each bit in the bitmap:
+
+1 if LED is on or flashing
+0 if LED is off or blinking
+
+**Transitions:**
+
+Changed by `init_leds()`, `clear_leds()`, `set_leds_on()`, `set_leds_off()`, `set_leds_flash()`, `set_leds_blink()` — or by external action
+
+### `leds_flash` byte value
+
+**Purpose:**
+
+Holds an 8-bit bitmap containing half of the state of each associated LED
+
+**Values:**
+
+For each bit in the bitmap:
+
+1 if LED is flashing or blinking
+0 if LED is on or off
+
+**Transitions:**
+
+Changed by `init_leds()`, `clear_leds()`, `set_leds_on()`, `set_leds_off()`, `set_leds_flash()`, `set_leds_blink()` — or by external action
+
+## [`Serial.a51`](/Serial.a51) module (and [`header`](/Serial.h) file)
+
+The `Serial.a51` module provides the following interrupt-driven background services:
+
+* Placing incoming serial characters from the hardware UART into a receive buffer (if there is space)
+* Updating the /RTS handshake output line to high (false) when the receive buffer reaches a "nearly full" state
+* Setting a flag when space becomes available in the hardware UART for an outgoing serial character
+
+The `Serial.a51` module will run on any 8051-variant microcontroller as long as there is adequate space available in the internal RAM for the desired size of receive buffer.
+
+*Note: The `put_serial_char()` and `get_serial_char()` functions provided here are **non-blocking** (i.e. they return immediately whether or not the operation can be carried out immediately).  This was done by design so that these routines could be used within a cooperative multitasking regime with more than one finite state machine running concurently.  It is easy to convert these operations into blocking calls by adding a `while` loop around thee function calls (see `Demo.c`) to block until either the associated status bit becomes true or the call to the relevant function returns a success indication.*
+
+### `init_serial()` function
+
+**Purpose:**
+
+Initialises the `Serial.a51` module, including setting up serial interrupts ("ticks"), flushing the receive buffer and configuring the UART (using Timer 1) to operate at the specified baud rate
+
+**Arguments:**
+
+Unsigned 8-bit `period` specifying the specified baud rate (see `BAUD_CLK` in [`Timing.h`](/Timing.h)), which is adjusted by one as per the 8051 data sheet before loading it into the Timer 1 auto-reload register
+
+**Returns:**
+
+None
+
+### `flush_serial_input()` function
+
+**Purpose:**
+
+Empties the receive buffer of any characters, returning with it empty
+
+**Arguments:**
+
+None
+
+**Returns:**
+
+None
+
+### `put_serial_char()` function
+
+**Purpose:**
+
+Attempts to send a serial character through the UART **without blocking** (i.e. returns immediately whether or not the character can be sent).
+
+**Arguments:**
+
+8-bit `ch` is the character to attempt to send
+
+**Returns:**
+
+1 (true bit) if character is successfully dispatched to the UART
+0 (false bit) if either the UART transmitter is still busy or the /CTS handshake input line is high (false)
+
+### `serial_tx_ready` status bit
+
+**Purpose:**
+
+Indicates whether the UART transmitter is ready to accept a character to send (i.e. not busy), so that a call to `put_serial_char()` will succeed unless the /CTS handshake input line is high (false)
+
+**Values:**
+
+1 (true bit) if UART transmitter is ready to accept a character to send
+0 (false bit) if UART transmitter is still busy on a previous transmission
+
+**Transitions:**
+
+Set by serial interrupt routine when the UART becomes free — and also by `init_serial()` 
+Cleared by `put_serial_char()` when a character is successfully dispatched to the UART
+
+### `get_serial_char()` function
+
+**Purpose:**
+
+Attempts to extract a serial character from the receive buffer **without blocking** (i.e. returns immediately whether or not a character can be extracted), updating the /RTS handshake output line to low (true) if removal of a character brings the receive buffer to a "nearly empty" state
+
+**Arguments:**
+
+None
+
+**Returns:**
+
+8-bit zero (ASCII NUL) if the receive buffer is empty (i.e. no character available to extract)
+8-bit `ch` is the extracted character if the receive buffer was not previously empty
+
+### `serial_rx_ready` status bit
+
+**Purpose:**
+
+Indicates whether the receive buffer contains any characters, so that a call to `put_serial_char()` will succeed
+
+**Values:**
+
+1 (true bit) if receive buffer contains at least one character
+0 (false bit) if receive buffer is empty
+
+**Transitions:**
+
+Set by serial interrupt routine when new receive character arrives
+Cleared by `get_serial_char()` when it empties receive buffer — and also by `flush_serial_input()` or `init_serial()`
+
+### `serial_rx_overflow` status bit
+
+**Purpose:**
+
+Indicates whether the receive buffer has overflowed, so that the most recently received characters have not been captured
+
+**Values:**
+
+1 (true bit) if receive buffer has overflowed
+0 (false bit) if receive buffer is empty
+
+**Transitions:**
+
+Set by serial interrupt routine when overflow occurs
+Cleared by a call to `flush_serial_input()` or `init_serial()`
+
+## Other header files
+
+The following stand-alone header files provide definitions for the system as a whole:
+
+* [`Timing.h`](/Timing.h) — Calculates system timing values from crystal frequency for microcontroller and desired Timer 2 tick rate
+* [`Ports.h`](/Ports.h) — Provides microcontroller port definitions required by 'C' code modules (only `Demo.c` here)
+* [`Ports.inc`](/Ports.inc) — Provides microcontroller port definitions required by assembly code modules (`Timers.a51`, `I2c_51.a51` and `Serial.a51`)
+* [`Types.h`](/Types.h) — Type definitions for unsigned 8-bit, 16-bit and 32-bit values, plus useful manipulation macros
+
+# References
+
+* [80C51/87C51/80C52/87C52 8-bit microcontroller family](https://www.nxp.com/docs/en/data-sheet/8XC51_8XC52.pdf)
+* [AT89S53 — 8-bit 8051-derivative Microcontroller with 12K Bytes Flash](http://ww1.microchip.com/downloads/en/devicedoc/doc0787.pdf)
+* [AT89S8253 — 8-bit 8051-derivative Microcontroller with 12K Bytes Flash](http://ww1.microchip.com/downloads/en/devicedoc/doc3286.pdf)
+* [PCA9551 — 8-bit I2C-bus LED driver with programmable blink rates](https://www.nxp.com/docs/en/data-sheet/PCA9551.pdf)
+*... more to be added*
