@@ -14,7 +14,7 @@
 #pragma SAVE
 #pragma REGPARMS
 
-extern bit  i2c_tout_err;		/* Error due to timeout, not NACK */
+extern bit  i2c_tout_err;       /* Error due to timeout, not NACK */
 
 extern bit  init_i2c      (void);
 extern void set_i2c_lng   (byte address);

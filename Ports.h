@@ -19,9 +19,9 @@
 
 /* Initial I/O port states */
 
-#define P0_INIT_SET		0xFF			/* All I/O pins high/input on re-start */
-#define P1_INIT_SET		0xFF
-#define P2_INIT_SET		0xFF
-#define P3_INIT_SET		0xFF
+#define P0_INIT_SET     0xFF            /* All I/O pins high/input on re-start */
+#define P1_INIT_SET     0xFF
+#define P2_INIT_SET     0xFF
+#define P3_INIT_SET     0xFF
 
 #pragma RESTORE
